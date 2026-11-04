@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>演示站合集 / 管理后台</title><link rel="stylesheet" href="/style.css"></head>
+<body class="admin-page">
+<header class="admin-top"><a class="brand" href="/">✦ 演示站合集 / 管理后台</a><a href="/">返回首页</a></header>
+<main class="admin-wrap">
+<section id="login" class="login-screen"><form id="loginForm" class="login-box"><h1>管理员登录</h1><p>请输入管理员密码以继续</p><label for="password">管理员密码</label><input id="password" type="password" autocomplete="current-password" required><button class="btn primary" type="submit">登录</button><p id="loginError" role="alert"></p></form></section>
+<section id="admin" class="hidden">
+<section class="panel admin-top-panel"><div><h1>站点管理</h1><p id="summary">正在加载…</p></div><div class="actions"><button id="add" class="btn primary" type="button">＋ 新增站点</button><button id="check" class="btn primary" type="button">一键检测存活</button><button id="export" class="btn" type="button">导出 JSON</button><label class="btn" for="importFile">导入数据</label><input id="importFile" type="file" accept=".json,application/json" hidden><button id="logout" class="btn" type="button">退出</button></div></section>
+<section class="panel"><h2>显示设置</h2><label for="pageSize">首页每页数量</label><select id="pageSize"><option value="12">12</option><option value="24">24</option><option value="36">36</option><option value="48">48</option><option value="60">60</option></select></section>
+<section class="panel"><h2>首页联系方式</h2><p>保存后会显示在首页右上角的联系方式下拉框中。可以只填写需要公开的项目。</p>
+<form id="contactForm"><div class="form-grid">
+<label>微信号<input name="contact_wechat" type="text" maxlength="200" placeholder="请输入微信号"></label>
+<label>QQ 号码<input name="contact_qq" type="text" maxlength="200" placeholder="请输入 QQ 号码"></label>
+<label>联系邮箱<input name="contact_email" type="email" maxlength="200" placeholder="name@example.com"></label>
+</div><button class="btn primary" type="submit">保存联系方式</button></form></section>
+<section class="panel table-scroll"><table class="admin-table"><thead><tr><th>站点名称</th><th>分类</th><th>状态</th><th>最近检测时间</th><th>操作</th></tr></thead><tbody id="rows"><tr><td colspan="5">正在加载…</td></tr></tbody></table></section>
+<section id="editor" class="panel hidden"><h2 id="editorTitle">新增站点</h2><form id="siteForm"><input name="id" type="hidden"><div class="form-grid">
+<label>站点名称<input name="name" required maxlength="120"></label><label>站点网址<input name="url" type="url" required placeholder="https://example.com"></label><label>分类<input name="category" placeholder="工具 / AI应用 / 网站"></label><label>封面图片 URL<input name="cover" type="url"></label><label>演示账号<input name="demo_user"></label><label>演示密码<input name="demo_password"></label><label>源码地址<input name="source_url" type="url"></label>
+</div><label>简介<textarea name="description" rows="3"></textarea></label><label>功能介绍<textarea name="features" rows="3"></textarea></label><div class="actions"><button class="btn primary" type="submit">保存站点</button><button id="cancel" class="btn" type="button">取消</button></div></form></section>
+<p class="admin-hint">安全提示：请使用专用演示账号，不要填写真实账号密码。</p>
+</section></main><script src="/admin.js" defer></script></body></html>
