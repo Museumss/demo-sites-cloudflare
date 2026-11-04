@@ -1,4 +1,4 @@
-name = "demo-sites-collection"
+name = "demo-sites-cloudflare"
 main = "src/worker.js"
 compatibility_date = "2026-10-01"
 
@@ -9,8 +9,8 @@ not_found_handling = "404-page"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "demo-sites-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_name = "demo-sites-cloudflare-db"
+database_id = "98068b04-8d21-4328-b6a2-bc75751f25b3"
 
 [triggers]
 # 每12小时执行一次（UTC）
