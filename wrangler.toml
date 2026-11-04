@@ -1,0 +1,20 @@
+name = "demo-sites-collection"
+main = "src/worker.js"
+compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "demo-sites-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[triggers]
+# 每12小时执行一次（UTC）
+crons = ["0 */12 * * *"]
+
+[vars]
+ENVIRONMENT = "production"
