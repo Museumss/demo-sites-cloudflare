@@ -46,3 +46,45 @@
   background: rgba(5, 15, 30, .58);
   backdrop-filter: blur(14px);
 }
+/* 首页横幅精简 */
+.hero {
+  height: 180px !important;
+  min-height: 180px;
+}
+
+.hero-copy {
+  padding: 0 0 0 8px;
+}
+
+.hero-copy .eyebrow,
+.hero-copy p,
+.hero-tags {
+  display: none !important;
+}
+
+.hero h1 {
+  font-size: 32px !important;
+  margin: 0 !important;
+  text-shadow: 0 2px 15px #0008;
+}
+
+.hero-search {
+  bottom: 55px;
+}
+
+/* 手机端 */
+@media(max-width:800px) {
+  .hero {
+    height: 180px !important;
+    min-height: 180px;
+    padding-top: 25px !important;
+  }
+
+  .hero h1 {
+    font-size: 28px !important;
+  }
+
+  .hero-search {
+    bottom: 18px;
+  }
+}
