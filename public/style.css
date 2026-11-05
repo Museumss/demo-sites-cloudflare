@@ -88,3 +88,17 @@
     bottom: 18px;
   }
 }
+/* 手机端卡片图片完整显示 */
+@media (max-width: 800px) {
+  .thumb {
+    height: 150px !important;
+    background: rgba(5, 20, 40, .8);
+  }
+
+  .thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+  }
+}
