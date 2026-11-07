@@ -1,21 +1,26 @@
-# 演示站合集 · 一键部署到 Cloudflare
+# 演示站合集 · 免费公开使用与 GitHub Fork
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Museumss/demo-sites-cloudflare)
+本项目面向个人学习、研究和个人网站展示，欢迎通过 GitHub **Fork** 复制到自己的账户后使用。
 
-点击上方按钮，即可将本项目复制到你自己的 GitHub 账号，并部署到你自己的 Cloudflare 账户。每位部署者应使用自己独立的 Worker、D1 数据库和 Secrets；不会共用作者的站点数据。
+## 如何 Fork 本项目
 
-## 一键部署步骤
+1. 登录自己的 GitHub 账户。
+2. 打开原项目： https://github.com/Museumss/demo-sites-cloudflare
+3. 点击页面右上方的 **Fork**。
+4. 在 Fork 页面选择自己的账户，点击 **Create fork**。
+5. Fork 完成后，你就拥有自己账户下的一份项目副本，可以继续修改和维护。
 
-1. 点击上方 **Deploy to Cloudflare**。
-2. 登录并授权 GitHub 与 Cloudflare，按页面提示选择自己的账户。
-3. 确认项目名称和 D1 资源名称，然后开始部署。Cloudflare 会根据 Wrangler 配置为你的项目创建并绑定独立 D1 数据库。
-4. 首次部署会自动执行 `migrations/0001_initial.sql`，初始化站点、设置和浏览量数据表。
-5. 部署完成后，打开 Cloudflare Dashboard → Workers & Pages → 你的 Worker → Settings → Variables and Secrets，添加以下两个 **Secret**：
-   - `ADMIN_PASSWORD`：你自己的后台登录密码。
-   - `SESSION_SECRET`：至少 32 位随机字符串，用于签名登录会话。
-6. 保存 Secrets 后重新部署一次，然后访问 Worker 域名；后台入口为 `/admin.html`。
+**说明：** 本项目不提供 Cloudflare 一键部署按钮。Fork 只是复制 GitHub 项目，不会自动创建 Cloudflare Worker 或 D1 数据库。需要部署到 Cloudflare 时，请在自己的 Fork 仓库中按项目部署教程操作，并使用自己的 Cloudflare 资源和密钥。
 
-> **重要：** 请勿把真实密码、SESSION_SECRET 或其他密钥提交到 GitHub。此项目部署到每个人自己的 Cloudflare 账户，数据互相独立。
+## 使用与授权
+
+- 允许个人免费使用、学习、修改，以及通过 GitHub Fork 在自己的账户中维护副本。
+- 未经作者书面授权，不得将本项目或其修改版本作为商品出售、收费转售、打包分发，或在其他平台重新发布源码。
+- 不得删除或伪造原作者版权声明，不得冒充本项目或其原作者。
+- Fork 后的修改由 Fork 使用者自行负责；原作者不对第三方修改版提供维护或担保。
+- 本项目按现状提供，不作任何明示或默示担保。
+
+完整授权条款见仓库根目录的 `LICENSE` 文件。若需商业使用、再分发或其他授权，请先联系作者并取得书面许可。
 
 ## 技术结构
 
