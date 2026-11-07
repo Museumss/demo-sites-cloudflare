@@ -4,9 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "db:migrations:apply": "wrangler d1 migrations apply DB --remote",
+    "deploy": "npm run db:migrations:apply && wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
+  },
+  "cloudflare": {
+    "bindings": {
+      "ADMIN_PASSWORD": {
+        "description": "请在部署后的 Worker Settings > Variables and Secrets 中设置管理员登录密码（Secret），不要提交到 GitHub。"
+      },
+      "SESSION_SECRET": {
+        "description": "请设置至少 32 位随机字符串作为 Secret，用于签名登录会话；不要提交到 GitHub。"
+      }
+    }
   }
 }
