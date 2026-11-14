@@ -43,7 +43,7 @@ function articleHtml(article,origin){
  const canonical=htmlEscape(article.canonical||`${origin}/article/${encodeURIComponent(article.slug)}`);
  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><meta name="description" content="${desc}"><meta name="keywords" content="${htmlEscape(article.seo_keywords||'')}"><link rel="canonical" href="${canonical}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="muted">演示站合集 · 文章</p><h1>${htmlEscape(article.title)}</h1>${article.cover?`<img src="${htmlEscape(article.cover)}" alt="${htmlEscape(article.title)}" style="max-width:100%;border-radius:12px">`:''}<div class="article-content">${body}</div><p><a href="/">← 返回首页</a></p></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
 }
-function infoPage(path,origin,db){
+async function infoPage(path,origin,db){
  const pages={
  '/contact':['联系我们','我们专注于 WordPress 网站建设及各类网站搭建服务，涵盖公司企业网站、发卡网、个人主页、博客网站、导航网站、影视网站、商城网站等。同时提供支付收款对接、网站安全优化、网站加速、网站排名 SEO 等相关服务。欢迎来咨询交流！','联系方式<br>微信：quanqiu09<br>QQ：1948267220<br>邮箱：xqdj.site@qq.com<br><br>网站搭建交流群<br>一群：861661915<br>二群：237644861'],
  '/privacy':['隐私政策','我们重视访客隐私。本网站提供演示站点导航与信息展示服务。访问公开页面时，服务器可能处理保障网站运行所需的基础请求信息。管理后台使用必要的会话 Cookie 维持管理员登录状态。','站点资料及后台设置存储于运营者配置的 Cloudflare D1 数据库。请勿在公开演示信息中填写真实密码、身份证件或其他敏感个人信息。我们不会要求访客提交与浏览服务无关的敏感资料。'],
