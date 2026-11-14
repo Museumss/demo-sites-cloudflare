@@ -39,7 +39,7 @@ async function initRichEditors(){
  await tinymce.init({...common,selector:'#toolsEditor',placeholder:'在这里编写工具页面内容…'});
  await tinymce.init({...common,selector:'#contactEditor',placeholder:'在这里编写联系我们页面内容…'});
 }
-async function loadPages(){const d=await api('/settings');const p=d.pages||{},f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||'';if(window.tinymce){for(const [id,key] of [['toolsEditor','tools_content'],['contactEditor','contact_content']]){const ed=tinymce.get(id);if(ed)ed.setContent(p[key]||'')}}}
+async function loadPages(){const d=await api('/settings');const p=d,f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||'';if(window.tinymce){for(const [id,key] of [['toolsEditor','tools_content'],['contactEditor','contact_content']]){const ed=tinymce.get(id);if(ed)ed.setContent(p[key]||'')}}}
 initRichEditors().then(()=>loadPages()).catch(e=>msg('编辑器初始化失败：'+e.message));
 
 const pagesForm=$('#pagesForm');
