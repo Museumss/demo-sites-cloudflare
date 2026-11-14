@@ -33,6 +33,14 @@ if(passwordForm)passwordForm.onsubmit=async e=>{
 };
 
 
-async function loadPages(){const d=await api('/settings');const p=d.pages||{},f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||''}
+async function initRichEditors(){
+ if(!window.tinymce){msg('可视化编辑器加载失败，请检查网络或 CDN 访问');return}
+ const common={license_key:'gpl',height:360,menubar:'edit view insert format table',plugins:'lists link image table code wordcount',toolbar:'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image table | removeformat code',language:'zh_CN',language_url:'https://cdn.jsdelivr.net/npm/tinymce@7.6.1/langs/zh_CN.js',promotion:false,branding:false,elementpath:false,convert_urls:false,relative_urls:false,remove_script_host:false,images_file_types:'jpg,jpeg,png,gif,webp',image_title:true,automatic_uploads:false,file_picker_types:'image',file_picker_callback:(callback)=>{const url=prompt('请输入已经上传到图床的图片直链（https:// 开头）：');if(url&&/^https:\/\//i.test(url))callback(url,{title:'页面图片'});else if(url)msg('图片地址必须以 https:// 开头')}};
+ await tinymce.init({...common,selector:'#toolsEditor',placeholder:'在这里编写工具页面内容…'});
+ await tinymce.init({...common,selector:'#contactEditor',placeholder:'在这里编写联系我们页面内容…'});
+}
+async function loadPages(){const d=await api('/settings');const p=d.pages||{},f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||'';if(window.tinymce){for(const [id,key] of [['toolsEditor','tools_content'],['contactEditor','contact_content']]){const ed=tinymce.get(id);if(ed)ed.setContent(p[key]||'')}}}
+initRichEditors().then(()=>loadPages()).catch(e=>msg('编辑器初始化失败：'+e.message));
+
 const pagesForm=$('#pagesForm');
-if(pagesForm)pagesForm.onsubmit=async e=>{e.preventDefault();const b=e.submitter;if(b)b.disabled=true;try{await api('/settings',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(pagesForm).entries()))});msg('工具和联系我们页面已保存')}catch(x){msg('保存失败：'+x.message)}finally{if(b)b.disabled=false}};
+if(pagesForm)pagesForm.onsubmit=async e=>{e.preventDefault();if(window.tinymce)tinymce.triggerSave();const b=e.submitter;if(b)b.disabled=true;try{await api('/settings',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(pagesForm).entries()))});msg('工具和联系我们页面已保存')}catch(x){msg('保存失败：'+x.message)}finally{if(b)b.disabled=false}};
