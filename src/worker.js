@@ -24,19 +24,15 @@ const htmlEscape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 function safeRichHtml(input){
  let html=String(input||'').slice(0,50000);
  html=html.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1\s*>/gi,'');
- const allowed=new Set(['p','br','h1','h2','h3','h4','strong','b','em','i','u','s','ul','ol','li','blockquote','pre','code','a','img','table','thead','tbody','tr','th','td','hr','div','span']);
- html=html.replace(/<(table|thead|tbody|tfoot)\b[^>]*>/gi,'<div class="content-table">').replace(/<\/(table|thead|tbody|tfoot)\s*>/gi,'</div>');
- html=html.replace(/<tr\b[^>]*>/gi,'<p class="content-table-row">').replace(/<\/tr\s*>/gi,'</p>');
- html=html.replace(/<(td|th)\b[^>]*>/gi,'<span class="content-table-cell">').replace(/<\/(td|th)\s*>/gi,'</span>');
+ const allowed=new Set(['p','br','h1','h2','h3','h4','strong','b','em','i','u','s','ul','ol','li','blockquote','pre','code','a','img','table','thead','tbody','tfoot','tr','th','td','hr','div','span']);
  return html.replace(/<\/?([a-z0-9]+)\b([^>]*)>/gi,(all,tag,attrs)=>{
   tag=tag.toLowerCase();if(!allowed.has(tag))return '';
   if(all.startsWith('</'))return ['br','img','hr'].includes(tag)?'':('</'+tag+'>');
   let extra='';
-  if(tag==='a'){const m=attrs.match(/href\s*=\s*["']([^"']+)["']/i);if(m&&/^(https?:|mailto:|tel:)/i.test(m[1]))extra+=' href="'+htmlEscape(m[1])+'" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline;font-weight:600"'}
+  if(tag==='a'){const m=attrs.match(/href\s*=\s*["']([^"']+)["']/i);if(m&&/^(https?:|mailto:|tel:)/i.test(m[1]))extra+=' href="'+htmlEscape(m[1])+'" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;text-decoration:underline;font-weight:600"'}
   if(tag==='img'){const m=attrs.match(/src\s*=\s*["']([^"']+)["']/i);if(!m||!/^https:\/\//i.test(m[1]))return '';extra+=' src="'+htmlEscape(m[1])+'" alt="" loading="lazy" style="max-width:100%;height:auto"'}
-  if(tag==='div'&&attrs.includes('content-table'))extra+=' class="content-table"';
-  if(tag==='p'&&attrs.includes('content-table-row'))extra+=' class="content-table-row"';
-  if(tag==='span'&&attrs.includes('content-table-cell'))extra+=' class="content-table-cell"';
+  if(tag==='table')extra+=' class="article-table"';
+  if(tag==='th'||tag==='td')extra+=' class="article-table-cell"';
   return '<'+tag+extra+(['br','img','hr'].includes(tag)?' />':'>');
  });
 }
