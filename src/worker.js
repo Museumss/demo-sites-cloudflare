@@ -23,14 +23,14 @@ function validSite(x){let url=safeUrl(x.url);if(!url||!String(x.name||'').trim()
 const htmlEscape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeRichHtml(input){
  let html=String(input||'').slice(0,50000);
- html=html.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi,'');
+ html=html.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1\s*>/gi,'');
  const allowed=new Set(['p','br','h1','h2','h3','h4','strong','b','em','i','u','s','ul','ol','li','blockquote','pre','code','a','img','table','thead','tbody','tr','th','td','hr','div','span']);
- return html.replace(/<\\/?([a-z0-9]+)\\b([^>]*)>/gi,(all,tag,attrs)=>{
+ return html.replace(/<\/?([a-z0-9]+)\b([^>]*)>/gi,(all,tag,attrs)=>{
   tag=tag.toLowerCase();if(!allowed.has(tag))return '';
   if(all.startsWith('</'))return ['br','img','hr'].includes(tag)?'':`</${tag}>`;
   let extra='';
-  if(tag==='a'){const m=attrs.match(/href\\s*=\\s*["']([^"']+)["']/i);if(m&&/^(https?:|mailto:|tel:)/i.test(m[1]))extra+=` href="${htmlEscape(m[1])}" target="_blank" rel="noopener noreferrer"`}
-  if(tag==='img'){const m=attrs.match(/src\\s*=\\s*["']([^"']+)["']/i);if(!m||!/^https?:\\/\\//i.test(m[1]))return '';extra+=` src="${htmlEscape(m[1])}" alt="" loading="lazy" style="max-width:100%;height:auto"`}
+  if(tag==='a'){const m=attrs.match(/href\s*=\s*["']([^"']+)["']/i);if(m&&/^(https?:|mailto:|tel:)/i.test(m[1]))extra+=` href="${htmlEscape(m[1])}" target="_blank" rel="noopener noreferrer"`}
+  if(tag==='img'){const m=attrs.match(/src\s*=\s*["']([^"']+)["']/i);if(!m||!/^https?:\/\//i.test(m[1]))return '';extra+=` src="${htmlEscape(m[1])}" alt="" loading="lazy" style="max-width:100%;height:auto"`}
   return `<${tag}${extra}${['br','img','hr'].includes(tag)?' />':'>'}`;
  });
 }
