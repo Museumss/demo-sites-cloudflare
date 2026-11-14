@@ -29,21 +29,23 @@ function articleHtml(article,origin){
  const canonical=htmlEscape(article.canonical||`${origin}/article/${encodeURIComponent(article.slug)}`);
  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><meta name="description" content="${desc}"><meta name="keywords" content="${htmlEscape(article.seo_keywords||'')}"><link rel="canonical" href="${canonical}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="muted">演示站合集 · 文章</p><h1>${htmlEscape(article.title)}</h1>${article.cover?`<img src="${htmlEscape(article.cover)}" alt="${htmlEscape(article.title)}" style="max-width:100%;border-radius:12px">`:''}<div class="article-content">${body}</div><p><a href="/">← 返回首页</a></p></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
 }
-async function toolsPage(db,origin){
- const articles=(await readArticles(db)).filter(a=>a.status==='published').sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));
- const cards=articles.map(a=>`<a class="site-card tool-article" href="/article/${encodeURIComponent(a.slug)}"><div class="card-body"><h3>${htmlEscape(a.title)}</h3><p>${htmlEscape(a.summary||'查看工具介绍与使用说明')}</p><div class="card-meta"><span>工具文章</span><span>↗ 阅读详情</span></div></div></a>`).join('')||'<div class="empty"><h3>暂无工具文章</h3><p>管理员发布工具文章后，会显示在这里。</p></div>';
- return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>工具｜演示站合集</title><meta name="description" content="演示站合集工具介绍与使用文章"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a class="active" href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="container"><section class="collection-head compact-head"><div class="home-stats"><div class="count"><strong>${articles.length}</strong><span>篇工具文章</span></div></div></section><section class="grid">${cards}</section></main><footer class="footer"><div class="footer-links"><a href="/privacy">隐私政策</a><a href="/disclaimer">免责声明</a><a href="/sitemap.xml">站点地图</a><a href="/admin.html">管理后台</a></div><p>© ${new Date().getFullYear()} 演示站合集 · All rights reserved.</p></footer></body></html>`;
-}
-function infoPage(path,origin){
+function infoPage(path,origin,db){
  const pages={
  '/contact':['联系我们','我们专注于 WordPress 网站建设及各类网站搭建服务，涵盖公司企业网站、发卡网、个人主页、博客网站、导航网站、影视网站、商城网站等。同时提供支付收款对接、网站安全优化、网站加速、网站排名 SEO 等相关服务。欢迎来咨询交流！','联系方式<br>微信：quanqiu09<br>QQ：1948267220<br>邮箱：xqdj.site@qq.com<br><br>网站搭建交流群<br>一群：861661915<br>二群：237644861'],
  '/privacy':['隐私政策','我们重视访客隐私。本网站提供演示站点导航与信息展示服务。访问公开页面时，服务器可能处理保障网站运行所需的基础请求信息。管理后台使用必要的会话 Cookie 维持管理员登录状态。','站点资料及后台设置存储于运营者配置的 Cloudflare D1 数据库。请勿在公开演示信息中填写真实密码、身份证件或其他敏感个人信息。我们不会要求访客提交与浏览服务无关的敏感资料。'],
  '/disclaimer':['免责声明','本站收录的第三方演示站仅用于技术演示、学习与交流。第三方网站的内容、服务、账号权限、可用性及安全性均由其运营者负责。','访问第三方网站前，请自行判断其安全性与适用性。本站不对第三方网站内容作出保证，也不承担因访问、使用或分享第三方网站而产生的损失或争议。若发现不准确或不适宜的信息，请联系我们处理。'],
  '/terms':['使用条款','访问和使用演示站合集，即表示你理解并同意遵守本页面所述条款。本站内容仅供信息参考、技术演示与学习交流，不构成任何商业、投资或专业建议。','请勿利用本站从事违法活动、攻击第三方服务、侵犯他人知识产权或干扰网站正常运行。本站有权在必要时调整页面内容、收录项目或暂停相关服务。'],
  };
- const item=pages[path];if(!item)return null;
+ let item=pages[path];
+ if(path==='/tools'||path==='/contact'){
+  const prefix=path==='/tools'?'tools':'contact';
+  const title=await getSetting(db,prefix+'_title')||(path==='/tools'?'工具':'联系我们');
+  const content=await getSetting(db,prefix+'_content')||(path==='/contact'?'<p>我们专注于 WordPress 网站建设及各类网站搭建服务，欢迎咨询交流。</p>':'<p>工具内容正在整理中，敬请期待。</p>');
+  item=[title,'',content];
+ }
+ if(!item)return null;
  const desc=htmlEscape(item[1].slice(0,150));
- return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">首页</a><a href="/about">关于我们</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${item[0]}</h1><p>${item[1]}</p><p>${item[2]??''}</p><p>${item[3]??''}</p><p><a href="/">← 返回首页</a></p></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
+ return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?item[2]:`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
 }
 
 export default {
@@ -52,6 +54,8 @@ export default {
   if(p.startsWith('/api/')){
    if(req.method==='OPTIONS')return new Response(null,{headers:{'access-control-allow-origin':u.origin,'access-control-allow-credentials':'true','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'content-type'}});
    try{
+    if(p==='/api/pages'&&req.method==='GET'){const keys=['tools_title','tools_content','contact_title','contact_content'];const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?)').bind(...keys).all()).results;return reply({pages:Object.fromEntries(rows.map(x=>[x.key,x.value]))})}
+    if(p==='/api/pages'&&req.method==='PUT'){const b=await req.json();for(const key of ['tools_title','contact_title'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).trim().slice(0,100));for(const key of ['tools_content','contact_content'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).slice(0,50000));return reply({ok:true})}
     if(p==='/api/articles'&&req.method==='GET'){const allArticles=await readArticles(env.DB);const articles=(await authorized(req,env)?allArticles:allArticles.filter(a=>a.status==='published')).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));return reply({articles:await authorized(req,env)?articles:articles.map(({content,...a})=>a)})}
     if(p==='/api/login'&&req.method==='POST'){let body=await req.json();if(!env.ADMIN_PASSWORD||!env.SESSION_SECRET)return reply({error:'管理员密码或 SESSION_SECRET 尚未配置'},503);if(!await verifyPassword(String(body.password||''),env))return reply({error:'密码错误'},401);let version=await getSetting(env.DB,'session_version')||'0';let token=await makeToken(env.SESSION_SECRET,version);return new Response(JSON.stringify({ok:true}),{headers:{...JSON_HEADERS,'set-cookie':`demo_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`}})}
     if(p==='/api/logout'&&req.method==='POST')return new Response('{"ok":true}',{headers:{...JSON_HEADERS,'set-cookie':'demo_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'}});
@@ -90,10 +94,10 @@ export default {
    }catch(e){console.error('API error',p,e);return reply({error:'服务器处理失败，请检查 D1 settings 表结构或 Worker 日志'},500)}
   }
   if(req.method==='GET'){
-   if(p==='/tools')return new Response(await toolsPage(env.DB,u.origin),{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=120'}});
+   
    if(p==='/robots.txt')return new Response(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nSitemap: ${u.origin}/sitemap.xml\n`,{headers:{'content-type':'text/plain; charset=utf-8','cache-control':'public, max-age=3600'}});
    if(p==='/sitemap.xml'){const paths=['/','/tools','/privacy','/disclaimer','/terms','/contact'];const articles=(await readArticles(env.DB)).filter(a=>a.status==='published');const urls=[...paths.map(x=>`${u.origin}${x}`),...articles.map(a=>`${u.origin}/article/${encodeURIComponent(a.slug)}`)];return new Response(`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.map(x=>`<url><loc>${htmlEscape(x)}</loc></url>`).join('')}</urlset>`,{headers:{'content-type':'application/xml; charset=utf-8','cache-control':'public, max-age=3600'}})}
-   const page=infoPage(p,u.origin);if(page)return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=300'}});
+   const page=await infoPage(p,u.origin,env.DB);if(page)return new Response(page,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=60'}});
    const am=p.match(/^\/article\/(.+)$/);if(am){let requestedSlug='';try{requestedSlug=decodeURIComponent(am[1])}catch{}const article=(await readArticles(env.DB)).find(a=>a.slug===requestedSlug&&a.status==='published');if(article)return new Response(articleHtml(article,u.origin),{headers:{'content-type':'text/html; charset=utf-8','cache-control':'public, max-age=300'}})}
   }
   return env.ASSETS.fetch(req);
