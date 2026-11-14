@@ -21,6 +21,20 @@ async function runChecks(env,ids=null){let rows=ids?.length?await Promise.all(id
 function validSite(x){let url=safeUrl(x.url);if(!url||!String(x.name||'').trim())return null;let source=x.source_url?safeUrl(x.source_url):null;let cover=x.cover?safeUrl(x.cover):null;return {name:String(x.name).trim().slice(0,120),url,category:String(x.category||'其他').slice(0,50),cover,description:String(x.description||'').slice(0,2000),features:String(x.features||'').slice(0,2000),demo_user:String(x.demo_user||'').slice(0,200),demo_password:String(x.demo_password||'').slice(0,200),source_url:source}}
 
 const htmlEscape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function safeRichHtml(input){
+ let html=String(input||'').slice(0,50000);
+ html=html.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi,'');
+ const allowed=new Set(['p','br','h1','h2','h3','h4','strong','b','em','i','u','s','ul','ol','li','blockquote','pre','code','a','img','table','thead','tbody','tr','th','td','hr','div','span']);
+ return html.replace(/<\\/?([a-z0-9]+)\\b([^>]*)>/gi,(all,tag,attrs)=>{
+  tag=tag.toLowerCase();if(!allowed.has(tag))return '';
+  if(all.startsWith('</'))return ['br','img','hr'].includes(tag)?'':`</${tag}>`;
+  let extra='';
+  if(tag==='a'){const m=attrs.match(/href\\s*=\\s*["']([^"']+)["']/i);if(m&&/^(https?:|mailto:|tel:)/i.test(m[1]))extra+=` href="${htmlEscape(m[1])}" target="_blank" rel="noopener noreferrer"`}
+  if(tag==='img'){const m=attrs.match(/src\\s*=\\s*["']([^"']+)["']/i);if(!m||!/^https?:\\/\\//i.test(m[1]))return '';extra+=` src="${htmlEscape(m[1])}" alt="" loading="lazy" style="max-width:100%;height:auto"`}
+  return `<${tag}${extra}${['br','img','hr'].includes(tag)?' />':'>'}`;
+ });
+}
+
 const slugify=v=>String(v||'').trim().toLowerCase().replace(/[\s_]+/g,'-').replace(/[^\p{L}\p{N}-]/gu,'').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,100);
 async function readArticles(db){try{const v=await getSetting(db,'articles_json');const a=JSON.parse(v||'[]');return Array.isArray(a)?a:[]}catch{return []}}
 function articleHtml(article,origin){
@@ -45,7 +59,7 @@ function infoPage(path,origin,db){
  }
  if(!item)return null;
  const desc=htmlEscape(item[1].slice(0,150));
- return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?item[2]:`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
+ return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?safeRichHtml(item[2]):`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
 }
 
 export default {
@@ -55,7 +69,7 @@ export default {
    if(req.method==='OPTIONS')return new Response(null,{headers:{'access-control-allow-origin':u.origin,'access-control-allow-credentials':'true','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'content-type'}});
    try{
     if(p==='/api/pages'&&req.method==='GET'){const keys=['tools_title','tools_content','contact_title','contact_content'];const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?)').bind(...keys).all()).results;return reply({pages:Object.fromEntries(rows.map(x=>[x.key,x.value]))})}
-    if(p==='/api/pages'&&req.method==='PUT'){const b=await req.json();for(const key of ['tools_title','contact_title'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).trim().slice(0,100));for(const key of ['tools_content','contact_content'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).slice(0,50000));return reply({ok:true})}
+    if(p==='/api/pages'&&req.method==='PUT'){if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);const b=await req.json();for(const key of ['tools_title','contact_title'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).trim().slice(0,100));for(const key of ['tools_content','contact_content'])if(b[key]!==undefined)await putSetting(env.DB,key,String(b[key]).slice(0,50000));return reply({ok:true})}
     if(p==='/api/articles'&&req.method==='GET'){const allArticles=await readArticles(env.DB);const articles=(await authorized(req,env)?allArticles:allArticles.filter(a=>a.status==='published')).sort((a,b)=>String(b.updated_at||'').localeCompare(String(a.updated_at||'')));return reply({articles:await authorized(req,env)?articles:articles.map(({content,...a})=>a)})}
     if(p==='/api/login'&&req.method==='POST'){let body=await req.json();if(!env.ADMIN_PASSWORD||!env.SESSION_SECRET)return reply({error:'管理员密码或 SESSION_SECRET 尚未配置'},503);if(!await verifyPassword(String(body.password||''),env))return reply({error:'密码错误'},401);let version=await getSetting(env.DB,'session_version')||'0';let token=await makeToken(env.SESSION_SECRET,version);return new Response(JSON.stringify({ok:true}),{headers:{...JSON_HEADERS,'set-cookie':`demo_session=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=28800`}})}
     if(p==='/api/logout'&&req.method==='POST')return new Response('{"ok":true}',{headers:{...JSON_HEADERS,'set-cookie':'demo_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'}});
