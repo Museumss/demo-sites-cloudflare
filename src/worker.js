@@ -65,7 +65,11 @@ async function infoPage(path,origin,db){
  }
  if(!item)return null;
  const desc=htmlEscape(item[1].slice(0,150));
- return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">工具</a><a href="/contact">联系我们</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?safeRichHtml(item[2]):`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
+ const navTools=htmlEscape(await getSetting(db,'nav_tools_label')||'工具');
+ const navContact=htmlEscape(await getSetting(db,'nav_contact_label')||'联系我们');
+ const bg=await getSetting(db,'background_image');
+ const bodyStyle=bg&&/^https:\/\//i.test(bg)?' style="background-image:linear-gradient(rgba(4,15,31,.72),rgba(4,15,31,.72)),url(&quot;'+htmlEscape(bg)+'&quot;);background-size:cover;background-position:center;background-attachment:fixed"':'';
+ return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body${bodyStyle}><header class="topbar"><a class="brand" href="/"><span class="brand-mark">⬡</span><span>演示站合集</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">${navTools}</a><a href="/contact">${navContact}</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?safeRichHtml(item[2]):`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer">© ${new Date().getFullYear()} 演示站合集</footer></body></html>`;
 }
 
 export default {
