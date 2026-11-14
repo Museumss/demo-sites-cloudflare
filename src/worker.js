@@ -101,7 +101,27 @@ export default {
     if(p==='/api/check'&&req.method==='POST'){let b=await req.json().catch(()=>({}));let n=await runChecks(env,Array.isArray(b.ids)?b.ids.map(Number):null);return reply({ok:true,checked:n})}
     if(p==='/api/import'&&req.method==='POST'){let b=await req.json();if(!Array.isArray(b.sites)||b.sites.length>1000)return reply({error:'导入格式错误或超过1000条'},400);let count=0;for(let item of b.sites){let s=validSite(item);if(!s)continue;await env.DB.prepare('INSERT INTO sites(name,url,category,cover,description,features,demo_user,demo_password,source_url,status) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(s.name,s.url,s.category,s.cover,s.description,s.features,s.demo_user,s.demo_password,s.source_url,'unknown').run();count++}return reply({ok:true,imported:count})}
     if(p==='/api/export'&&req.method==='GET'){let rows=(await env.DB.prepare('SELECT name,url,category,cover,description,features,demo_user,demo_password,source_url,status,last_checked FROM sites ORDER BY id').all()).results;return reply({sites:rows})}
-    if(p==='/api/settings'&&(req.method==='GET'||req.method==='PUT')){if(req.method==='GET'){let rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN ("page_size","contact_wechat","contact_qq","contact_email")').all()).results;let values=Object.fromEntries(rows.map(x=>[x.key,x.value]));return reply({page_size:Number(values.page_size||24),contact_wechat:values.contact_wechat||'',contact_qq:values.contact_qq||'',contact_email:values.contact_email||''})}let b=await req.json();if(b.page_size!==undefined){let n=Math.max(6,Math.min(100,Number(b.page_size)||24));await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES("page_size",?)').bind(String(n)).run()}for(let key of ['contact_wechat','contact_qq','contact_email','tools_title','tools_content','contact_title','contact_content']){if(b[key]!==undefined){let value=String(b[key]||'').trim().slice(0,200);await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)').bind(key,value).run()}}let rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN ("page_size","contact_wechat","contact_qq","contact_email")').all()).results;let values=Object.fromEntries(rows.map(x=>[x.key,x.value]));return reply({page_size:Number(values.page_size||24),contact_wechat:values.contact_wechat||'',contact_qq:values.contact_qq||'',contact_email:values.contact_email||''})}
+    if(p==='/api/settings'&&(req.method==='GET'||req.method==='PUT')){
+     if(req.method==='GET'){
+      const keys=['page_size','contact_wechat','contact_qq','contact_email','tools_title','tools_content','contact_title','contact_content'];
+      const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?,?,?,?,?)').bind(...keys).all()).results;
+      const values=Object.fromEntries(rows.map(x=>[x.key,x.value]));
+      return reply({page_size:Number(values.page_size||24),contact_wechat:values.contact_wechat||'',contact_qq:values.contact_qq||'',contact_email:values.contact_email||'',tools_title:values.tools_title||'工具',tools_content:values.tools_content||'',contact_title:values.contact_title||'联系我们',contact_content:values.contact_content||''});
+     }
+     const b=await req.json();
+     if(b.page_size!==undefined){const n=Math.max(6,Math.min(100,Number(b.page_size)||24));await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES("page_size",?)').bind(String(n)).run()}
+     for(const key of ['contact_wechat','contact_qq','contact_email','tools_title','contact_title','tools_content','contact_content']){
+      if(b[key]!==undefined){
+       const max=key.endsWith('_content')?50000:200;
+       const value=key.endsWith('_content')?String(b[key]||'').slice(0,max):String(b[key]||'').trim().slice(0,max);
+       await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)').bind(key,value).run();
+      }
+     }
+     const keys=['page_size','contact_wechat','contact_qq','contact_email','tools_title','tools_content','contact_title','contact_content'];
+     const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?,?,?,?,?)').bind(...keys).all()).results;
+     const values=Object.fromEntries(rows.map(x=>[x.key,x.value]));
+     return reply({page_size:Number(values.page_size||24),contact_wechat:values.contact_wechat||'',contact_qq:values.contact_qq||'',contact_email:values.contact_email||'',tools_title:values.tools_title||'工具',tools_content:values.tools_content||'',contact_title:values.contact_title||'联系我们',contact_content:values.contact_content||''});
+    }
     return reply({error:'接口不存在'},404)
    }catch(e){console.error('API error',p,e);return reply({error:'服务器处理失败，请检查 D1 settings 表结构或 Worker 日志'},500)}
   }
