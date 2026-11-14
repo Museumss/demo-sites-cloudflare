@@ -33,6 +33,6 @@ if(passwordForm)passwordForm.onsubmit=async e=>{
 };
 
 
-async function loadPages(){const d=await api('/pages');const p=d.pages||{},f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||''}
+async function loadPages(){const d=await api('/settings');const p=d.pages||{},f=$('#pagesForm');for(const k of ['tools_title','tools_content','contact_title','contact_content'])f.elements[k].value=p[k]||''}
 const pagesForm=$('#pagesForm');
-if(pagesForm)pagesForm.onsubmit=async e=>{e.preventDefault();const b=e.submitter;if(b)b.disabled=true;try{await api('/pages',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(pagesForm).entries()))});msg('工具和联系我们页面已保存')}catch(x){msg('保存失败：'+x.message)}finally{if(b)b.disabled=false}};
+if(pagesForm)pagesForm.onsubmit=async e=>{e.preventDefault();const b=e.submitter;if(b)b.disabled=true;try{await api('/settings',{method:'PUT',body:JSON.stringify(Object.fromEntries(new FormData(pagesForm).entries()))});msg('工具和联系我们页面已保存')}catch(x){msg('保存失败：'+x.message)}finally{if(b)b.disabled=false}};
