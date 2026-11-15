@@ -110,3 +110,11 @@
 .thumb img{display:block;width:100%;height:100%;object-fit:cover;aspect-ratio:16/9}
 .site-card{content-visibility:auto;contain-intrinsic-size:auto 270px}
 @media(max-width:800px){.thumb{height:120px}}
+
+/* Softer card thumbnails; full-size preview remains sharp */
+.thumb{isolation:isolate}
+.thumb img{filter:blur(3px);transform:scale(1.045);transition:filter .2s ease,transform .2s ease}
+.thumb::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(2,12,27,.16),rgba(2,12,27,.04) 55%,rgba(2,12,27,.22))}
+.thumb .status{z-index:2;right:8px;top:8px;padding:7px 12px;font-size:12px;line-height:1.25;gap:7px;box-shadow:0 3px 14px #0007;border:1px solid rgba(255,255,255,.2)}
+.thumb .status i{width:7px;height:7px;flex:0 0 7px}
+@media(max-width:600px){.thumb .status{right:7px;top:7px;padding:6px 10px;font-size:11px}}
