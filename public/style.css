@@ -77,3 +77,14 @@
 .password-toggle{display:inline-flex;align-items:center;max-width:100%;padding:6px 10px;border:1px solid #3976a5;border-radius:7px;background:#0c2c4b;color:#62c6ff;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
 .password-toggle:hover{background:#17466d}
 @media(max-width:800px){#customerService{left:12px;bottom:14px;padding:10px 14px;font-size:13px}.float-tools{right:12px;bottom:14px}}
+
+/* Modal detail layout: feature, account, password each separate; check time last */
+.detail-grid{display:flex!important;flex-direction:column!important;gap:13px!important}
+.detail-grid>div{display:flex!important;flex-direction:row!important;align-items:flex-start!important;justify-content:space-between!important;gap:16px!important;padding:10px 0!important;border-bottom:1px solid rgba(130,180,220,.16)}
+.detail-grid .detail-feature{order:1}.detail-grid .detail-account{order:2}.detail-grid .detail-password{order:3}.detail-grid .detail-checked{order:4;border-bottom:0}
+.detail-grid>div>span{flex:0 0 92px!important}.detail-grid>div>strong{flex:1;text-align:right}
+#customerServicePanel{position:fixed;left:18px;bottom:78px;z-index:9999;width:min(420px,calc(100vw - 28px));height:min(620px,calc(100vh - 110px));display:flex;flex-direction:column;overflow:hidden;border:1px solid #3289c7;border-radius:16px;background:#0b2038;box-shadow:0 18px 55px #0009}
+.customer-service-head{height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#102f50;color:#eaf5ff}
+.customer-service-head button{border:0;background:transparent;color:#fff;font-size:28px;cursor:pointer}
+#customerServicePanel iframe{width:100%;height:100%;border:0;background:#fff}
+@media(max-width:600px){#customerServicePanel{left:10px;bottom:68px;width:calc(100vw - 20px);height:72vh}.detail-grid>div>span{flex-basis:82px!important}}
