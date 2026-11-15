@@ -83,7 +83,7 @@ npx wrangler d1 migrations apply DB --local
 
 ## 自测清单
 
-- 访问 `/` 与 `/agent`（管理后台入口）
+- 访问 `/` 与 `/admin.html`
 - 使用你设置的 `ADMIN_PASSWORD` 登录
 - 新增测试站点并确认首页出现
 - 点击卡片查看详情
