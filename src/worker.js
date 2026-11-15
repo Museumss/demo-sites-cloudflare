@@ -77,6 +77,18 @@ async function infoPage(path,origin,db){
 export default {
  async fetch(req,env){
   const u=new URL(req.url),p=u.pathname;
+  if(p.startsWith('/media/')&&req.method==='GET'){
+   const key=p.slice('/media/'.length);
+   if(!/^images\\/\\d{4}\\/\\d{2}\\/[a-f0-9-]+\\.(jpg|png|webp|gif)$/i.test(key)||!env.R2_BUCKET)return new Response('Not found',{status:404});
+   const object=await env.R2_BUCKET.get(key);
+   if(!object)return new Response('Not found',{status:404});
+   const headers=new Headers();
+   object.writeHttpMetadata(headers);
+   headers.set('etag',object.httpEtag);
+   headers.set('cache-control','public, max-age=31536000, immutable');
+   headers.set('x-content-type-options','nosniff');
+   return new Response(object.body,{headers});
+  }
   if(p.startsWith('/api/')){
    if(req.method==='OPTIONS')return new Response(null,{headers:{'access-control-allow-origin':u.origin,'access-control-allow-credentials':'true','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'content-type'}});
    try{
@@ -91,6 +103,28 @@ export default {
     if(p==='/api/settings'&&req.method==='GET'){const keys=['page_size','contact_wechat','contact_qq','contact_email','tools_title','tools_content','contact_title','contact_content','nav_tools_label','nav_contact_label','background_image','customer_service_url','brand_name','brand_avatar_url'];const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(...keys).all()).results;const v=Object.fromEntries(rows.map(x=>[x.key,x.value]));return reply({page_size:Number(v.page_size||24),contact_wechat:v.contact_wechat||'',contact_qq:v.contact_qq||'',contact_email:v.contact_email||'',tools_title:v.tools_title||'工具',tools_content:v.tools_content||'',contact_title:v.contact_title||'联系我们',contact_content:v.contact_content||'',nav_tools_label:v.nav_tools_label||'工具',nav_contact_label:v.nav_contact_label||'联系我们',background_image:v.background_image||'',customer_service_url:v.customer_service_url||'',brand_name:v.brand_name||'演示站合集',brand_avatar_url:v.brand_avatar_url||''})}
     if(p==='/api/settings'&&req.method==='PUT'){if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);const b=await req.json();const keys=['tools_title','tools_content','contact_title','contact_content','nav_tools_label','nav_contact_label','background_image','customer_service_url','brand_name','brand_avatar_url'];for(const key of keys){if(b[key]!==undefined){let value=String(b[key]||'');if(key.endsWith('_content'))value=value.slice(0,50000);else value=value.trim().slice(0,key==='background_image'?2000:100);if((key==='background_image'||key==='customer_service_url'||key==='brand_avatar_url')&&value&&!/^https:\/\//i.test(value))return reply({error:'网址必须使用 https://'},400);await putSetting(env.DB,key,value)}}return reply({ok:true})}
     if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);
+    if(p==='/api/media'&&req.method==='GET'){
+     if(!env.R2_BUCKET)return reply({error:'R2_BUCKET 未绑定'},503);
+     const listed=await env.R2_BUCKET.list({prefix:'images/',limit:100});
+     return reply({files:listed.objects.map(o=>({key:o.key,url:'/media/'+o.key,size:o.size,uploaded:o.uploaded?.toISOString?.()||''})),truncated:listed.truncated});
+    }
+    if(p==='/api/media/upload'&&req.method==='POST'){
+     if(!env.R2_BUCKET)return reply({error:'R2_BUCKET 未绑定'},503);
+     const form=await req.formData(),file=form.get('file');
+     if(!file||typeof file.arrayBuffer!=='function')return reply({error:'请选择图片文件'},400);
+     const types={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif'};
+     const ext=types[file.type];if(!ext)return reply({error:'仅支持 JPG、PNG、WEBP、GIF 图片'},400);
+     if(file.size>10*1024*1024)return reply({error:'单张图片不能超过 10MB'},413);
+     const date=new Date(),pad=n=>String(n).padStart(2,'0');
+     const key='images/'+date.getUTCFullYear()+'/'+pad(date.getUTCMonth()+1)+'/'+crypto.randomUUID()+'.'+ext;
+     await env.R2_BUCKET.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type,cacheControl:'public, max-age=31536000, immutable'}});
+     return reply({ok:true,key,url:'/media/'+key,size:file.size},201);
+    }
+    const mediaMatch=p.match(/^\\/api\\/media\\/(images\\/\\d{4}\\/\\d{2}\\/[a-f0-9-]+\\.(?:jpg|png|webp|gif))$/i);
+    if(mediaMatch&&req.method==='DELETE'){
+     if(!env.R2_BUCKET)return reply({error:'R2_BUCKET 未绑定'},503);
+     await env.R2_BUCKET.delete(mediaMatch[1]);return reply({ok:true});
+    }
     if(p==='/api/articles'&&req.method==='GET'){return reply({articles:await readArticles(env.DB)})}
     if(p==='/api/articles'&&req.method==='POST'){const b=await req.json();const title=String(b.title||'').trim();const slug=slugify(b.slug||title);if(!title||!slug)return reply({error:'标题和网址别名不能为空'},400);const articles=await readArticles(env.DB);if(articles.some(a=>a.slug===slug))return reply({error:'网址别名已存在'},409);const a={id:crypto.randomUUID(),title,slug,summary:String(b.summary||'').slice(0,500),content:String(b.content||'').slice(0,50000),cover:safeUrl(b.cover||'')||'',seo_title:String(b.seo_title||'').slice(0,200),seo_description:String(b.seo_description||'').slice(0,500),seo_keywords:String(b.seo_keywords||'').slice(0,500),canonical:String(b.canonical||'').slice(0,500),status:b.status==='published'?'published':'draft',created_at:now(),updated_at:now()};articles.push(a);await putSetting(env.DB,'articles_json',JSON.stringify(articles));return reply({ok:true,article:a},201)}
     let am=p.match(/^\/api\/articles\/([a-f0-9-]+)$/i);if(am&&req.method==='PUT'){const b=await req.json(),articles=await readArticles(env.DB),i=articles.findIndex(a=>a.id===am[1]);if(i<0)return reply({error:'文章不存在'},404);const title=String(b.title||'').trim(),slug=slugify(b.slug||title);if(!title||!slug)return reply({error:'标题和网址别名不能为空'},400);if(articles.some((a,j)=>j!==i&&a.slug===slug))return reply({error:'网址别名已存在'},409);articles[i]={...articles[i],title,slug,summary:String(b.summary||'').slice(0,500),content:String(b.content||'').slice(0,50000),cover:safeUrl(b.cover||'')||'',seo_title:String(b.seo_title||'').slice(0,200),seo_description:String(b.seo_description||'').slice(0,500),seo_keywords:String(b.seo_keywords||'').slice(0,500),canonical:String(b.canonical||'').slice(0,500),status:b.status==='published'?'published':'draft',updated_at:now()};await putSetting(env.DB,'articles_json',JSON.stringify(articles));return reply({ok:true,article:articles[i]})}
