@@ -76,12 +76,13 @@ async function infoPage(path,origin,db){
 
 function validMediaKey(key){
  const parts=String(key||'').split('/');
- if(parts.length!==4||parts[0]!=='images'||!/^\\d{4}$/.test(parts[1])||!/^\\d{2}$/.test(parts[2]))return false;
+ const digits=s=>s.length>0&&[...s].every(ch=>ch>='0'&&ch<='9');
+ if(parts.length!==4||parts[0]!=='images'||parts[1].length!==4||!digits(parts[1])||parts[2].length!==2||!digits(parts[2]))return false;
  const month=Number(parts[2]);if(month<1||month>12)return false;
  const file=parts[3],dot=file.lastIndexOf('.');if(dot<0)return false;
  const id=file.slice(0,dot),ext=file.slice(dot+1).toLowerCase();
  if(id.length!==36||![8,13,18,23].every(i=>id[i]==='-'))return false;
- for(let i=0;i<id.length;i++){if([8,13,18,23].includes(i))continue;if(!'0123456789abcdef'.includes(id[i].toLowerCase()))return false}
+ for(let i=0;i<id.length;i++){if([8,13,18,23].includes(i))continue;const ch=id[i].toLowerCase();if(!(ch>='0'&&ch<='9')&&!(ch>='a'&&ch<='f'))return false}
  return ['jpg','png','webp','gif'].includes(ext);
 }
 export default {
