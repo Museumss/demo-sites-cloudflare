@@ -13,6 +13,10 @@ binding = "DB"
 database_name = "demo-sites-cloudflare-db"
 database_id = "98068b04-8d21-4328-b6a2-bc75751f25b3"
 
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "demo-sites-files"
+
 [triggers]
 # 每12小时执行一次（UTC）
 crons = ["0 */12 * * *"]
