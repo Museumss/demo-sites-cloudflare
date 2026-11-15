@@ -91,6 +91,16 @@ export default {
   if(p.startsWith('/media/')&&req.method==='GET'){
    const key=p.slice('/media/'.length);
    if(!validMediaKey(key)||!env.R2_BUCKET)return new Response('Not found',{status:404});
+   // Browser hotlink protection: only pages on the site domains may embed media.
+   // Missing or malformed source headers are denied by default.
+   const allowedHosts=new Set(['demo.mfys.cc.cd','www.demo.mfys.cc.cd','demo-sites-cloudflare.jiujinshang.workers.dev']);
+   const origin=req.headers.get('origin')||'';
+   const referer=req.headers.get('referer')||'';
+   let sourceHost='';
+   try{if(origin)sourceHost=new URL(origin).hostname.toLowerCase();else if(referer)sourceHost=new URL(referer).hostname.toLowerCase()}catch{}
+   if(!sourceHost||!allowedHosts.has(sourceHost)){
+    return new Response('Forbidden',{status:403,headers:{'cache-control':'no-store','x-content-type-options':'nosniff','vary':'Origin, Referer'}});
+   }
    const object=await env.R2_BUCKET.get(key);
    if(!object)return new Response('Not found',{status:404});
    const headers=new Headers();
@@ -98,6 +108,7 @@ export default {
    headers.set('etag',object.httpEtag);
    headers.set('cache-control','public, max-age=31536000, immutable');
    headers.set('x-content-type-options','nosniff');
+   headers.set('vary','Origin, Referer');
    return new Response(object.body,{headers});
   }
   if(p.startsWith('/api/')){
