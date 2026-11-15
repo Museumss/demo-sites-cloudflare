@@ -74,12 +74,22 @@ async function infoPage(path,origin,db){
  return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${item[0]}｜演示站合集</title><meta name="description" content="${desc}"><link rel="canonical" href="${origin}${path}"><meta name="robots" content="index,follow"><link rel="stylesheet" href="/style.css"></head><body${bodyStyle}><header class="topbar"><a class="brand" href="/"><span class="brand-mark">${brandMark}</span><span>${brandName}</span></a><nav class="nav"><a href="/">全部站点</a><a href="/tools">${navTools}</a><a href="/contact">${navContact}</a></nav></header><main class="admin-wrap"><article class="panel article-page"><p class="eyebrow">DEMO SITES COLLECTION</p><h1>${htmlEscape(item[0])}</h1><div class="article-content">${path==='/tools'||path==='/contact'?safeRichHtml(item[2]):`<p>${htmlEscape(item[1])}</p><p>${item[2]??''}</p><p>${item[3]??''}</p>`}</div></article></main><footer class="footer"><p>© <a class="footer-project-link" href="https://github.com/Museumss/demo-sites-cloudflare" target="_blank" rel="noopener noreferrer">${new Date().getFullYear()} ${brandName}</a> · All rights reserved.</p></footer></body></html>`;
 }
 
+function validMediaKey(key){
+ const parts=String(key||'').split('/');
+ if(parts.length!==4||parts[0]!=='images'||!/^\\d{4}$/.test(parts[1])||!/^\\d{2}$/.test(parts[2]))return false;
+ const month=Number(parts[2]);if(month<1||month>12)return false;
+ const file=parts[3],dot=file.lastIndexOf('.');if(dot<0)return false;
+ const id=file.slice(0,dot),ext=file.slice(dot+1).toLowerCase();
+ if(id.length!==36||![8,13,18,23].every(i=>id[i]==='-'))return false;
+ for(let i=0;i<id.length;i++){if([8,13,18,23].includes(i))continue;if(!'0123456789abcdef'.includes(id[i].toLowerCase()))return false}
+ return ['jpg','png','webp','gif'].includes(ext);
+}
 export default {
  async fetch(req,env){
   const u=new URL(req.url),p=u.pathname;
   if(p.startsWith('/media/')&&req.method==='GET'){
    const key=p.slice('/media/'.length);
-   if(!/^images\\/\\d{4}\\/\\d{2}\\/[a-f0-9-]+\\.(jpg|png|webp|gif)$/i.test(key)||!env.R2_BUCKET)return new Response('Not found',{status:404});
+   if(!validMediaKey(key)||!env.R2_BUCKET)return new Response('Not found',{status:404});
    const object=await env.R2_BUCKET.get(key);
    if(!object)return new Response('Not found',{status:404});
    const headers=new Headers();
@@ -120,10 +130,10 @@ export default {
      await env.R2_BUCKET.put(key,await file.arrayBuffer(),{httpMetadata:{contentType:file.type,cacheControl:'public, max-age=31536000, immutable'}});
      return reply({ok:true,key,url:'/media/'+key,size:file.size},201);
     }
-    const mediaMatch=p.match(/^\\/api\\/media\\/(images\\/\\d{4}\\/\\d{2}\\/[a-f0-9-]+\\.(?:jpg|png|webp|gif))$/i);
-    if(mediaMatch&&req.method==='DELETE'){
+    const mediaKey=p.startsWith('/api/media/')?p.slice('/api/media/'.length):'';
+    if(validMediaKey(mediaKey)&&req.method==='DELETE'){
      if(!env.R2_BUCKET)return reply({error:'R2_BUCKET 未绑定'},503);
-     await env.R2_BUCKET.delete(mediaMatch[1]);return reply({ok:true});
+     await env.R2_BUCKET.delete(mediaKey);return reply({ok:true});
     }
     if(p==='/api/articles'&&req.method==='GET'){return reply({articles:await readArticles(env.DB)})}
     if(p==='/api/articles'&&req.method==='POST'){const b=await req.json();const title=String(b.title||'').trim();const slug=slugify(b.slug||title);if(!title||!slug)return reply({error:'标题和网址别名不能为空'},400);const articles=await readArticles(env.DB);if(articles.some(a=>a.slug===slug))return reply({error:'网址别名已存在'},409);const a={id:crypto.randomUUID(),title,slug,summary:String(b.summary||'').slice(0,500),content:String(b.content||'').slice(0,50000),cover:safeUrl(b.cover||'')||'',seo_title:String(b.seo_title||'').slice(0,200),seo_description:String(b.seo_description||'').slice(0,500),seo_keywords:String(b.seo_keywords||'').slice(0,500),canonical:String(b.canonical||'').slice(0,500),status:b.status==='published'?'published':'draft',created_at:now(),updated_at:now()};articles.push(a);await putSetting(env.DB,'articles_json',JSON.stringify(articles));return reply({ok:true,article:a},201)}
