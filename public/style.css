@@ -118,3 +118,9 @@
 .thumb .status{z-index:2;right:8px;top:8px;padding:7px 12px;font-size:12px;line-height:1.25;gap:7px;box-shadow:0 3px 14px #0007;border:1px solid rgba(255,255,255,.2)}
 .thumb .status i{width:7px;height:7px;flex:0 0 7px}
 @media(max-width:600px){.thumb .status{right:7px;top:7px;padding:6px 10px;font-size:11px}}
+
+/* Mobile: keep the full status label visible, not just its indicator dot */
+@media(max-width:600px){
+ .thumb .status{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;width:auto!important;min-width:54px!important;max-width:calc(100% - 14px)!important;height:auto!important;min-height:24px!important;padding:5px 8px!important;overflow:visible!important;white-space:nowrap!important;font-size:11px!important;line-height:1.2!important;color:#fff!important;opacity:1!important;visibility:visible!important;}
+ .thumb .status i{display:block!important;visibility:visible!important;opacity:1!important;width:6px!important;height:6px!important;min-width:6px!important;min-height:6px!important;flex:0 0 6px!important;margin:0!important;}
+}
