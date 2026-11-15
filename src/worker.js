@@ -74,8 +74,6 @@ async function infoPage(path,origin,db){
 export default {
  async fetch(req,env){
   const u=new URL(req.url),p=u.pathname;
-  if(req.method==='GET'&&(p==='/agent'||p==='/agent/')){const target=new URL(req.url);target.pathname='/admin.html';return env.ASSETS.fetch(new Request(target.toString(),req))}
-  if(req.method==='GET'&&(p==='/admin'||p==='/admin/'||p==='/admin.html'))return Response.redirect(`${u.origin}/agent`,302);
   if(p.startsWith('/api/')){
    if(req.method==='OPTIONS')return new Response(null,{headers:{'access-control-allow-origin':u.origin,'access-control-allow-credentials':'true','access-control-allow-methods':'GET,POST,PUT,DELETE,OPTIONS','access-control-allow-headers':'content-type'}});
    try{
