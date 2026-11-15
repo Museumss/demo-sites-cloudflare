@@ -22,7 +22,7 @@ function validSite(x){let url=safeUrl(x.url);if(!url||!String(x.name||'').trim()
 
 const htmlEscape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function safeRichHtml(input){
- let html=String(input||'').slice(0,50000);
+ let html=String(input||'').slice(0,200000);
  html=html.replace(/<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1\s*>/gi,'');
  const allowed=new Set(['p','br','h1','h2','h3','h4','strong','b','em','i','u','s','ul','ol','li','blockquote','pre','code','a','img','table','thead','tbody','tfoot','tr','th','td','hr','div','span']);
  return html.replace(/<\/?([a-z0-9]+)\b([^>]*)>/gi,(all,tag,attrs)=>{
@@ -123,7 +123,7 @@ export default {
     let viewMatch=p.match(/^\/api\/sites\/(\d+)\/view$/);if(viewMatch&&req.method==='POST'){const id=Number(viewMatch[1]);const exists=await env.DB.prepare('SELECT id FROM sites WHERE id=?').bind(id).first();if(!exists)return reply({error:'站点不存在'},404);await env.DB.prepare('INSERT INTO site_views(site_id,views) VALUES(?,1) ON CONFLICT(site_id) DO UPDATE SET views=views+1').bind(id).run();const row=await env.DB.prepare('SELECT views FROM site_views WHERE site_id=?').bind(id).first();return reply({ok:true,view_count:Number(row?.views||0)})}
     if(p==='/api/sites'&&req.method==='GET'){let rows=(await env.DB.prepare('SELECT sites.*,COALESCE(site_views.views,0) AS view_count FROM sites LEFT JOIN site_views ON site_views.site_id=sites.id ORDER BY CASE sites.status WHEN "up" THEN 0 ELSE 1 END, sites.name COLLATE NOCASE').all()).results;return reply({sites:rows})}
     if(p==='/api/settings'&&req.method==='GET'){const keys=['page_size','contact_wechat','contact_qq','contact_email','tools_title','tools_content','contact_title','contact_content','nav_tools_label','nav_contact_label','background_image','customer_service_url','brand_name','brand_avatar_url'];const rows=(await env.DB.prepare('SELECT key,value FROM settings WHERE key IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(...keys).all()).results;const v=Object.fromEntries(rows.map(x=>[x.key,x.value]));return reply({page_size:Number(v.page_size||24),contact_wechat:v.contact_wechat||'',contact_qq:v.contact_qq||'',contact_email:v.contact_email||'',tools_title:v.tools_title||'工具',tools_content:v.tools_content||'',contact_title:v.contact_title||'联系我们',contact_content:v.contact_content||'',nav_tools_label:v.nav_tools_label||'工具',nav_contact_label:v.nav_contact_label||'联系我们',background_image:v.background_image||'',customer_service_url:v.customer_service_url||'',brand_name:v.brand_name||'演示站合集',brand_avatar_url:v.brand_avatar_url||''})}
-    if(p==='/api/settings'&&req.method==='PUT'){if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);const b=await req.json();const keys=['tools_title','tools_content','contact_title','contact_content','nav_tools_label','nav_contact_label','background_image','customer_service_url','brand_name','brand_avatar_url'];for(const key of keys){if(b[key]!==undefined){let value=String(b[key]||'');if(key.endsWith('_content'))value=value.slice(0,50000);else value=value.trim().slice(0,key==='background_image'?2000:100);if((key==='background_image'||key==='customer_service_url'||key==='brand_avatar_url')&&value&&!/^https:\/\//i.test(value))return reply({error:'网址必须使用 https://'},400);await putSetting(env.DB,key,value)}}return reply({ok:true})}
+    if(p==='/api/settings'&&req.method==='PUT'){if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);const b=await req.json();const keys=['tools_title','tools_content','contact_title','contact_content','nav_tools_label','nav_contact_label','background_image','customer_service_url','brand_name','brand_avatar_url'];for(const key of keys){if(b[key]!==undefined){let value=String(b[key]||'');if(key.endsWith('_content'))value=value.slice(0,key==='tools_content'?200000:100000);else value=value.trim().slice(0,key==='background_image'?2000:100);if((key==='background_image'||key==='customer_service_url'||key==='brand_avatar_url')&&value&&!/^https:\/\//i.test(value))return reply({error:'网址必须使用 https://'},400);await putSetting(env.DB,key,value)}}return reply({ok:true})}
     if(!await authorized(req,env))return reply({error:'请先登录管理后台'},401);
     if(p==='/api/media'&&req.method==='GET'){
      if(!env.R2_BUCKET)return reply({error:'R2_BUCKET 未绑定'},503);
@@ -181,7 +181,7 @@ export default {
      if(b.page_size!==undefined){const n=Math.max(6,Math.min(100,Number(b.page_size)||24));await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES("page_size",?)').bind(String(n)).run()}
      for(const key of ['contact_wechat','contact_qq','contact_email','tools_title','contact_title','tools_content','contact_content']){
       if(b[key]!==undefined){
-       const max=key.endsWith('_content')?50000:200;
+       const max=key==='tools_content'?200000:key==='contact_content'?100000:200;
        const value=key.endsWith('_content')?String(b[key]||'').slice(0,max):String(b[key]||'').trim().slice(0,max);
        await env.DB.prepare('INSERT OR REPLACE INTO settings(key,value) VALUES(?,?)').bind(key,value).run();
       }
